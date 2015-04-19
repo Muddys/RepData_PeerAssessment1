@@ -1,23 +1,12 @@
----
-title: 'Reproducible Research: Peer Assessment 1'
-author: "Antti Savolainen"
-output:
-  html_document:
-    keep_md: yes
-  pdf_document: default
----
+# Reproducible Research: Peer Assessment 1
+Antti Savolainen  
 
-```{r, echo=FALSE, results='hide'}
-# had some problems with Finnish locale and a few warnings that I wanted to omit
-warnings <- getOption("warn")
-options(warn=-1)
-locale <- Sys.getlocale("LC_TIME")
-Sys.setlocale("LC_TIME", "English")
-```
+
 
 ## Loading and preprocessing the data
 We begin with loading the data. This will get the data from the internet if it doesn't exist in the current working directory
-```{r}
+
+```r
 if (file.exists("activity.csv")) {
   data <- read.csv("activity.csv")
 } else {
@@ -36,7 +25,8 @@ if (file.exists("activity.csv")) {
 } 
 ```
 To make our life a bit easier later on we make sure the classes are correct for the columns
-```{r}
+
+```r
 data$steps <- as.numeric(data$steps)
 data$date <- as.Date(data$date)
 data$interval <- as.numeric(as.character(data$interval))
@@ -46,36 +36,55 @@ data$interval <- as.numeric(as.character(data$interval))
 ## Data with missing values
 When we check the data we immediately notice that there are a lot of step values that are missing. Actually there are
 
-```{r}
+
+```r
 sum(is.na(data))
+```
+
+```
+## [1] 2304
 ```
 
 values missing.
 
 To start with we explore the daily patterns a bit when omitting the times when the number of steps is missing. We get the following plot of the histogram of the total number of steps taken each day:
 
-```{r}
+
+```r
 naOmit <- na.omit(data)
 library(ggplot2)
 qplot(date, data = naOmit, weight = steps, geom = "histogram", binwidth = 1, 
       main = "Total number of steps taken each day")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+
 The mean and median total number of steps taken each day are
 
-```{r}
+
+```r
 totalSteps <- aggregate(naOmit$steps, list(Date = naOmit$date), FUN = "sum")
 mean(totalSteps$x)
 ```
 
-```{r}
+```
+## [1] 10766.19
+```
+
+
+```r
 median(totalSteps$x)
+```
+
+```
+## [1] 10765
 ```
 
 ## What is the average daily activity pattern?
 
 The average daily activity pattern with 5 minute intervals is:
-```{r}
+
+```r
 meanSteps <- aggregate(naOmit$steps, 
                        list(interval = as.numeric(as.character(naOmit$interval)))
                        , FUN = "mean")
@@ -83,9 +92,16 @@ qplot(x=interval, y=x, data = meanSteps, geom = "line", ylab = "steps",
       main = "average steps in a 5 minute interval")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
 With the highest activity being at 
-```{r}
+
+```r
 meanSteps$interval[which.max(meanSteps$x)]
+```
+
+```
+## [1] 835
 ```
 meaning that on average the peak activity is at 8:35.
 
@@ -93,9 +109,18 @@ meaning that on average the peak activity is at 8:35.
 
 Since omitting the missing values completely can result in skewed data I devised a strategy of filling the missing value based on the mean value at that time of the day for that weekday. This can be accomplished with:
 
-```{r}
+
+```r
 naOmit$weekday <- weekdays(naOmit$date)
 unique(naOmit$weekday) # make sure we have data for all weekdays
+```
+
+```
+## [1] "Tuesday"   "Wednesday" "Thursday"  "Friday"    "Saturday"  "Sunday"   
+## [7] "Monday"
+```
+
+```r
 meanStepWeekdays <- aggregate(naOmit$steps, 
                               list(interval = as.numeric(as.character(naOmit$interval)),
                                    weekday = naOmit$weekday), FUN = "mean")
@@ -115,12 +140,29 @@ for(i in 1:nrow(data))
 }
 ```
 
-```{r}
+
+```r
 qplot(date, data = filledData, weight = steps, geom = "histogram", 
       binwidth = 1, main = "Total number of steps taken each day for filled data")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png) 
+
+```r
 filledTotalSteps <- aggregate(filledData$steps, list(Date = filledData$date), FUN = "sum")
 mean(filledTotalSteps$x)
+```
+
+```
+## [1] 10821.21
+```
+
+```r
 median(filledTotalSteps$x)
+```
+
+```
+## [1] 11015
 ```
 
 This slightly increases the mean (increase of 55.02) and median (increase of 250) total number of daily steps.
@@ -129,7 +171,8 @@ This slightly increases the mean (increase of 55.02) and median (increase of 250
 
 The reason for the increase can be that there is a difference in the activity pattern for weekdays and weekends. 
 
-```{r}
+
+```r
 filledData$weekday <- factor(weekdays(filledData$date))
 levels(filledData$weekday) <- list(weekday = c("Monday", "Tuesday", "Wednesday",
                                                "Thursday", "Friday"),
@@ -144,10 +187,9 @@ xyplot(meanStep$x ~ meanStep$interval | meanStep$weekday, layout = c(1,2), type 
        main = "Mean number of steps on weekend and weekdays")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-12-1.png) 
+
 Based on the time series plots there is a clear difference between weekdays and weekend.
 
-```{r, echo=FALSE, results='hide'}
-options(warn=warnings)
-Sys.setlocale("LC_TIME", locale)
-```
+
 
